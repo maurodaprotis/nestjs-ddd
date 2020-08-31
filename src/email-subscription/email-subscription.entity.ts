@@ -1,5 +1,6 @@
-import { Entity } from 'src/core/domain/Entity';
+import { AggregateRoot } from '@nestjs/cqrs';
 import { UniqueEntityId } from 'src/core/domain/UniqueEntityId';
+import { EmailSubscribedEvent } from './events/email-subscribed.event';
 
 interface EmailSubscriptionProps {
   corporatePartnerId: string;
@@ -8,9 +9,18 @@ interface EmailSubscriptionProps {
   createdAt: Date;
 }
 
-export class EmailSubscription extends Entity<EmailSubscriptionProps> {
-  get id(): UniqueEntityId {
-    return this._id;
+export class EmailSubscription extends AggregateRoot {
+  private constructor(
+    public readonly props: EmailSubscriptionProps,
+    private _id: UniqueEntityId,
+  ) {
+    super();
+    this._id = _id ? _id : new UniqueEntityId();
+    this.apply(new EmailSubscribedEvent(this.id));
+  }
+
+  get id(): string {
+    return this._id.toString();
   }
 
   get email(): string {
@@ -21,20 +31,19 @@ export class EmailSubscription extends Entity<EmailSubscriptionProps> {
     return this.props.firstName;
   }
 
-  get createdAt(): Date {
-    return this.props.createdAt;
-  }
-
   get corporatePartnerId(): string {
     return this.props.corporatePartnerId;
   }
 
-  private constructor(props: ) {
-    super(props, )
+  get createdAt(): Date {
+    return this.props.createdAt;
   }
 
-  static create(): EmailSubscription {
-    return new EmailSubscription();
+  static create(
+    props: EmailSubscriptionProps,
+    id?: UniqueEntityId,
+  ): EmailSubscription {
+    return new EmailSubscription(props, id);
   }
 }
 
